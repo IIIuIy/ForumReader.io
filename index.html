@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reader — Форум</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2216%22 fill=%22%2360a5fa%22/><text x=%2250%22 y=%2258%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>R</text></svg>">
+<style>
+  :root{
+    --bg:#0b1220; --panel:#071226; --muted:#97a6b3; --accent:#60a5fa;
+    --glass: rgba(255,255,255,0.03); --card:#0f1724; --card-2:#0e1b2a;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,Helvetica,sans-serif}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#051021 0%, #071827 100%);color:#e6eef6;-webkit-font-smoothing:antialiased}
+  .app{display:grid;grid-template-columns:300px 1fr 360px;gap:18px;padding:18px;min-height:100vh}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--card));border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02);}
+  header.site{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo .mark{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#60a5fa,#7c3aed);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(96,165,250,0.12)}
+  .logo .mark svg{width:26px;height:26px}
+  .logo .title{line-height:1}
+  .logo .title h1{margin:0;font-size:16px;letter-spacing:0.2px}
+  .logo .title .sub{font-size:12px;color:var(--muted)}
+  .search-row{display:flex;gap:8px;margin-top:6px}
+  input[type="text"], textarea, select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:10px;color:inherit;outline:none;width:100%}
+  button.btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;color:var(--muted);cursor:pointer}
+  button.btn.primary{background:linear-gradient(90deg,#60a5fa22,#60a5fa11);color:var(--accent);border:1px solid rgba(96,165,250,0.12)}
+  .left{display:flex;flex-direction:column;height:calc(100vh - 48px)}
+  .categories{overflow:auto;padding-top:8px;padding-bottom:8px}
+  .category{padding:10px;border-radius:10px;display:flex;align-items:center;gap:10px;cursor:pointer}
+  .category:hover{background:rgba(255,255,255,0.02)}
+  .category.active{background:linear-gradient(90deg,#60a5fa11,#7c3aed0f);border:1px solid rgba(96,165,250,0.06)}
+  .cat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02)}
+  .channels{margin-left:46px;margin-top:6px}
+  .channel{padding:8px;border-radius:8px;cursor:pointer;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .channel:hover{background:rgba(255,255,255,0.01)}
+  .channel.active{color:var(--accent);font-weight:600}
+  .center{display:flex;flex-direction:column;gap:12px;height:calc(100vh - 48px)}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .threads{overflow:auto;padding-right:6px}
+  .thread{display:flex;gap:12px;padding:12px;border-radius:12px;margin-bottom:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.02)}
+  .avatar{width:56px;height:56px;border-radius:10px;flex-shrink:0;overflow:hidden;background:#0b1220;border:1px solid rgba(255,255,255,0.02)}
+  .thread-body{flex:1;display:flex;flex-direction:column}
+  .thread-body h3{margin:0;font-size:16px;display:flex;gap:8px;align-items:center}
+  .pill{background:rgba(255,255,255,0.03);padding:4px 8px;border-radius:999px;font-size:12px;color:var(--muted)}
+  .meta{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:center;margin-top:6px}
+  .excerpt{margin-top:8px;color:var(--muted);}
+  .controls{display:flex;gap:8px;align-items:center}
+  .new-panel{background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .right{display:flex;flex-direction:column;gap:12px;height:calc(100vh - 48px);overflow:auto}
+  .card{padding:12px;border-radius:10px;background:linear-gradient(180deg,#071226,#071726);border:1px solid rgba(255,255,255,0.02)}
+  .small{font-size:13px;color:var(--muted)}
+  .reply{padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);margin-top:8px}
+  footer{font-size:12px;color:var(--muted);text-align:center;padding-top:6px}
+  .icon-btn{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+  .grid-avatars{display:flex;gap:8px;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  @media (max-width:1100px){ .app{grid-template-columns:1fr;grid-template-rows:auto 1fr auto} .right{order:3} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- LEFT: categories / channels -->
+  <aside class="panel left" id="leftPanel">
+    <header class="site">
+      <div class="logo" style="flex:1">
+        <div class="mark" aria-hidden>
+          <!-- small R svg -->
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h8a4 4 0 010 8H6v4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="title">
+          <h1>Reader</h1>
+          <div class="sub">Форум — тестовая платформа</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <button class="icon-btn" id="toggleTheme" title="Тема" aria-label="Тема">
+          <!-- moon icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="search-row">
+      <input id="searchInput" type="text" placeholder="Поиск тем, авторов..." />
+      <button class="btn" id="searchBtn">Найти</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="newCategoryName" placeholder="Добавить категорию" />
+      <button class="btn primary" id="addCategoryBtn">Добавить</button>
+    </div>
+
+    <div style="margin-top:12px" class="small muted">Категории / Каналы</div>
+    <div class="categories" id="categoriesList"></div>
+  </aside>
+
+  <!-- CENTER: threads and thread view -->
+  <main class="panel center" id="centerPanel">
+    <div class="topbar">
+      <div>
+        <div class="small muted" id="crumbs">Выберите категорию и канал</div>
+        <h2 id="channelTitle" style="margin:6px 0 0 0">Добро пожаловать в Reader</h2>
+      </div>
+      <div class="controls">
+        <button class="btn" id="refreshBtn">Сброс примера</button>
+        <button class="btn" id="exportBtn" title="Экспорт">Экспорт</button>
+        <button class="btn primary" id="newThreadToggle">Новая тема</button>
+      </div>
+    </div>
+
+    <!-- create thread -->
+    <div id="newThreadPanel" class="new-panel hidable" style="margin-top:8px;display:none">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="threadTitle" placeholder="Заголовок темы" />
+        <select id="presetTag" style="width:180px">
+          <option value="">Тег</option>
+          <option>Вопрос</option><option>Инструкция</option><option>Обсуждение</option><option>Анонс</option>
+        </select>
+        <input id="threadAuthor" placeholder="Автор" style="width:160px" />
+      </div>
+      <div style="margin-top:8px">
+        <textarea id="threadContent" placeholder="Текст темы (поддерживается простой HTML, списки и переносы)"></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button class="btn" id="cancelThread">Отмена</button>
+        <button class="btn primary" id="createThreadBtn">Опубликовать</button>
+      </div>
+    </div>
+
+    <!-- list of threads -->
+    <div class="threads" id="threadsList" style="margin-top:12px"></div>
+
+    <!-- thread view -->
+    <div id="threadView" class="hidable" style="margin-top:12px;display:none">
+      <div class="new-panel" id="threadFull"></div>
+
+      <div class="new-panel" style="margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="replyAuthor" placeholder="Ваше имя" style="width:200px" />
+          <input id="replyAvatarFile" placeholder="Аватар (1-5.png) или пусто" style="width:180px" />
+        </div>
+        <div style="margin-top:8px">
+          <textarea id="replyText" placeholder="Ответить..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn" id="cancelReply">Отмена</button>
+          <button class="btn primary" id="postReplyBtn">Опубликовать ответ</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT: info / avatars / stats -->
+  <aside class="panel right" id="rightPanel">
+    <div class="card">
+      <h3 style="margin:0 0 8px 0">О Форуме</h3>
+      <div class="small muted">Reader — лёгкий одностраничный форум. Данные сохраняются в localStorage браузера. Картинки-аватары: <code>1.png</code> — <code>5.png</code> рядом с файлом.</div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin:6px 0">Активные каналы</h4>
+      <div id="activeChannels" class="small muted"></div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin:6px 0">Аватары</h4>
+      <div class="grid-avatars" id="avatarPreview">
+        <!-- preview images (user must provide 1.png..5.png) -->
+        <img src="1.png" alt="1" style="width:56px;height:56px;border-radius:10px;object-fit:cover" onerror="this.style.opacity=0.15">
+        <img src="2.png" alt="2" style="width:56px;height:56px;border-radius:10px;object-fit:cover" onerror="this.style.opacity=0.15">
+        <img src="3.png" alt="3" style="width:56px;height:56px;border-radius:10px;object-fit:cover" onerror="this.style.opacity=0.15">
+        <img src="4.png" alt="4" style="width:56px;height:56px;border-radius:10px;object-fit:cover" onerror="this.style.opacity=0.15">
+        <img src="5.png" alt="5" style="width:56px;height:56px;border-radius:10px;object-fit:cover" onerror="this.style.opacity=0.15">
+      </div>
+      <div class="small muted" style="margin-top:8px">Поддерживается использование файлов <code>1.png…5.png</code> для аватаров.</div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin:6px 0">Статистика</h4>
+      <div id="stats" class="small muted"></div>
+    </div>
+
+    <footer style="margin-top:12px">Тестовая версия ForumReader</footer>
+  </aside>
+</div>
+
+<script>
+/* ========== Модель ========== */
+const STORAGE_KEY = 'mini_forum_v1'; // сохраняем прежний ключ — апгрейд кода использует те же данные
+const sampleData = {
+  title: 'Reader',
+  categories: [
+    {
+      id: 'cat-1', name: 'Разработка', icon: 'code',
+      channels: [
+        { id:'ch-1', name:'Web-разработка', threads: [
+          { id:'t-1', title:'Оптимизация загрузки сайта', content:'Используйте lazy-loading для изображений, Brotli, CDN и code-splitting. <ul><li>Кеш</li><li>Минификация</li></ul>', author:'Алексей', avatar:'1.png', tag:'Вопрос', ts: Date.now()-1000*60*60*24*2, replies:[{id:'r-1', author:'Марина', avatar:'2.png', text:'Добавлю: HTTP/3 даёт прирост.', ts: Date.now()-1000*60*60*24}]},
+          { id:'t-2', title:'Лучшие практики Node.js', content:'Helmet, валидация вводимых данных, регулярные обновления зависимостей.', author:'Игорь', avatar:'3.png', tag:'Инструкция', ts: Date.now()-1000*60*60*24*8, replies:[]}
+        ]},
+        { id:'ch-2', name:'Мобильная разработка', threads: []}
+      ]
+    },
+    {
+      id: 'cat-2', name: 'Дизайн', icon: 'design',
+      channels: [
+        { id:'ch-3', name:'UI/UX', threads:[
+          { id:'t-3', title:'Гайд по кнопкам', content:'Коротко: размер, контраст, отклик. Примеры в комплекте.', author:'Ольга', avatar:'4.png', tag:'Инструкция', ts: Date.now()-1000*60*60*24*4, replies:[]}
+        ]},
+        { id:'ch-4', name:'Портфолио', threads:[]}
+      ]
+    },
+    {
+      id: 'cat-3', name: 'Проекты', icon: 'project',
+      channels: [
+        { id:'ch-5', name:'Open Source', threads:[
+          { id:'t-4', title:'Ищем контрибьюторов', content:'Проект: лёгкий фреймворк. Нужны тестировщики и документация. <br><img src="1.png" style="max-width:220px;border-radius:8px;margin-top:8px" alt="img">', author:'Влад', avatar:'5.png', tag:'Обсуждение', ts: Date.now()-1000*60*60*5, replies:[{id:'r-2', author:'Катя', avatar:'2.png', text:'Я могу помочь с документацией.', ts: Date.now()-1000*60*60*4} ]}
+        ]}
+      ]
+    },
+    { id:'cat-4', name:'Обсуждения', icon:'chat', channels:[ {id:'ch-6', name:'Общие темы', threads:[
+      {id:'t-5', title:'Приветствие и правила', content:'Добро пожаловать! Правила: уважение, темы по существу, запрещён спам.', author:'Модератор', avatar:'3.png', tag:'Обсуждение', ts: Date.now()-1000*60*60*24*20, replies:[]}
+    ]},{id:'ch-7', name:'Хобби', threads:[]}]},
+    { id:'cat-5', name:'Игры', icon:'game', channels:[ {id:'ch-8', name:'PC', threads:[]}, {id:'ch-9', name:'Консоли', threads:[]} ]},
+    { id:'cat-6', name:'Наука', icon:'science', channels:[ {id:'ch-10', name:'Физика', threads:[]}, {id:'ch-11', name:'Математика', threads:[]} ]},
+    { id:'cat-7', name:'Музыка', icon:'music', channels:[ {id:'ch-12', name:'Релизы', threads:[]}, {id:'ch-13', name:'Обсуждение', threads:[]} ]},
+    { id:'cat-8', name:'Работа', icon:'brief', channels:[ {id:'ch-14', name:'Вакансии', threads:[]}, {id:'ch-15', name:'Фриланс', threads:[]} ]}
+  ]
+};
+
+/* ========== Утилиты ========== */
+function uid(prefix='id'){ return prefix + '-' + Math.random().toString(36).slice(2,9); }
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){ localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleData)); return deepClone(sampleData); }
+  try { return JSON.parse(raw); } catch(e){ localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleData)); return deepClone(sampleData); }
+}
+function saveData(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function stripTags(s){ const tmp=document.createElement('div'); tmp.innerHTML = s||''; return tmp.textContent||tmp.innerText||''; }
+function shorten(s,n){ if(!s) return ''; if(s.length<=n) return s; return s.slice(0,n).trim() + '...'; }
+function formatContent(s){ if(!s) return ''; let out = escapeHtml(s); out = out.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>'); return `<div style="line-height:1.5">${out}</div>`; }
+function avatarFor(name, specified){
+  // specified may be '1.png' etc. If exists, use it; else hash name to 1..5
+  if(specified) return specified;
+  if(!name) return '1.png';
+  let sum = 0; for(let i=0;i<name.length;i++) sum += name.charCodeAt(i);
+  const idx = (sum % 5) + 1;
+  return idx + '.png';
+}
+
+/* ========== Состояние ========== */
+let state = {
+  data: loadData(),
+  activeCategoryId: null,
+  activeChannelId: null,
+  activeThreadId: null,
+  searchQuery: ''
+};
+
+/* ========== DOM элементы ========== */
+const categoriesList = document.getElementById('categoriesList');
+const threadsList = document.getElementById('threadsList');
+const channelTitle = document.getElementById('channelTitle');
+const crumbs = document.getElementById('crumbs');
+const activeChannelsDiv = document.getElementById('activeChannels');
+const statsDiv = document.getElementById('stats');
+const newThreadPanel = document.getElementById('newThreadPanel');
+const threadView = document.getElementById('threadView');
+
+/* ========== Поиск: включает ENTER ========== */
+document.getElementById('searchBtn').addEventListener('click', ()=>{ state.searchQuery = document.getElementById('searchInput').value.trim(); state.activeThreadId=null; renderAll(); });
+document.getElementById('searchInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('searchBtn').click(); });
+
+/* ========== Рендеринг категорий и каналов ========== */
+function findCategory(catId){ return state.data.categories.find(c=>c.id===catId); }
+function findChannel(catId,chId){ const cat=findCategory(catId); return cat?.channels.find(ch=>ch.id===chId); }
+function findThread(catId,chId,tId){ const ch=findChannel(catId,chId); return ch?.threads.find(t=>t.id===tId); }
+
+function getIconSvg(name){
+  // small set of inline svgs
+  const icons = {
+    code: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M16 18l6-6-6-6" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6L2 12l6 6" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    design: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v20" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round"/><path d="M5 12h14" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    project:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="#cfe9ff" stroke-width="1.2"/><rect x="14" y="14" width="7" height="7" stroke="#cfe9ff" stroke-width="1.2"/></svg>',
+    chat:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    game:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="10" rx="2" stroke="#cfe9ff" stroke-width="1.2"/><path d="M7 12h.01M11 10v4M13 12h4" stroke="#cfe9ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    science:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 21h10" stroke="#cfe9ff" stroke-width="1.2"/><path d="M12 3v12" stroke="#cfe9ff" stroke-width="1.2"/><path d="M8 7h8" stroke="#cfe9ff" stroke-width="1.2"/></svg>',
+    music:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l11-2v12" stroke="#cfe9ff" stroke-width="1.2"/><circle cx="6" cy="18" r="3" stroke="#cfe9ff" stroke-width="1.2"/><circle cx="17" cy="16" r="3" stroke="#cfe9ff" stroke-width="1.2"/></svg>',
+    brief:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="12" rx="2" stroke="#cfe9ff"/><path d="M8 7V5h8v2" stroke="#cfe9ff"/></svg>',
+    default:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#cfe9ff" stroke-width="1.2"/></svg>'
+  };
+  return icons[name] || icons['default'];
+}
+
+function renderCategories(){
+  categoriesList.innerHTML = '';
+  state.data.categories.forEach(cat=>{
+    const catDiv = document.createElement('div');
+    catDiv.className = 'category' + (state.activeCategoryId===cat.id ? ' active' : '');
+    catDiv.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <div class="cat-icon">${getIconSvg(cat.icon)}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px"><strong>${escapeHtml(cat.name)}</strong><span class="small muted">${cat.channels.length} канал(ов)</span></div>
+        </div>
+      </div>
+    `;
+    catDiv.onclick = ()=>{
+      state.activeCategoryId = cat.id;
+      state.activeChannelId = cat.channels[0]?.id || null;
+      state.activeThreadId = null;
+      renderAll();
+    };
+
+    // channels
+    const chList = document.createElement('div'); chList.className='channels';
+    cat.channels.forEach(ch=>{
+      const chEl = document.createElement('div');
+      chEl.className = 'channel' + (state.activeChannelId===ch.id && state.activeCategoryId===cat.id ? ' active' : '');
+      chEl.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style="font-size:13px">${escapeHtml(ch.name)}</div></div><div class="pill">${ch.threads.length}</div>`;
+      chEl.onclick = (ev)=>{ ev.stopPropagation(); state.activeCategoryId = cat.id; state.activeChannelId = ch.id; state.activeThreadId = null; renderAll(); };
+      chList.appendChild(chEl);
+    });
+
+    categoriesList.appendChild(catDiv);
+    categoriesList.appendChild(chList);
+  });
+}
+
+/* ========== Рендер тем и просмотра темы ========== */
+function renderThreads(){
+  threadsList.innerHTML = '';
+  if(!state.activeCategoryId || !state.activeChannelId){
+    channelTitle.textContent = 'Выберите канал';
+    crumbs.textContent = 'Категория / Канал не выбраны';
+    return;
+  }
+  const cat = findCategory(state.activeCategoryId);
+  const ch = findChannel(state.activeCategoryId, state.activeChannelId);
+  channelTitle.textContent = ch.name;
+  crumbs.textContent = `${cat.name} / ${ch.name}`;
+
+  let threads = ch.threads.slice().sort((a,b)=>b.ts - a.ts);
+  if(state.searchQuery){
+    const q = state.searchQuery.toLowerCase();
+    threads = threads.filter(t => (t.title + ' ' + stripTags(t.content) + ' ' + t.author).toLowerCase().includes(q));
+  }
+
+  if(threads.length===0){
+    threadsList.innerHTML = `<div class="small muted">Здесь пока пусто. Создайте первую тему.</div>`;
+    return;
+  }
+
+  threads.forEach(t=>{
+    const el = document.createElement('div'); el.className='thread';
+    const av = avatarFor(t.author, t.avatar);
+    el.innerHTML = `
+      <div class="avatar"><img src="${av}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=0.2"></div>
+      <div class="thread-body">
+        <h3>${escapeHtml(t.title)} <span class="pill">${escapeHtml(t.tag||'')}</span></h3>
+        <div class="meta"><span>автор: <strong>${escapeHtml(t.author||'Аноним')}</strong></span><span>&bull;</span><span>${new Date(t.ts).toLocaleString()}</span><span style="margin-left:auto" class="small link" data-id="${t.id}">Открыть</span></div>
+        <div class="excerpt small muted">${escapeHtml(shorten(stripTags(t.content),220))}</div>
+      </div>
+    `;
+    el.querySelector('.link').onclick = ()=>{
+      state.activeThreadId = t.id;
+      renderThreadView();
+    };
+    threadsList.appendChild(el);
+  });
+}
+
+function renderThreadView(){
+  const view = document.getElementById('threadFull');
+  if(!state.activeThreadId){
+    threadView.style.display = 'none';
+    return;
+  }
+  const t = findThread(state.activeCategoryId, state.activeChannelId, state.activeThreadId);
+  if(!t){ threadView.style.display='none'; return; }
+  threadView.style.display = 'block';
+  view.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div class="avatar"><img src="${avatarFor(t.author,t.avatar)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=0.2"></div>
+      <div style="flex:1">
+        <h3 style="margin:0">${escapeHtml(t.title)} <span class="pill">${escapeHtml(t.tag||'')}</span></h3>
+        <div class="meta">Автор: <strong>${escapeHtml(t.author||'Аноним')}</strong> • ${new Date(t.ts).toLocaleString()}</div>
+        <div style="margin-top:10px" class="small">${formatContent(t.content)}</div>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+    <div><strong>Ответы (${t.replies.length})</strong></div>
+    <div id="repliesContainer"></div>
+  `;
+  const rc = document.getElementById('repliesContainer');
+  rc.innerHTML = '';
+  t.replies.sort((a,b)=>a.ts-b.ts).forEach(r=>{
+    const re = document.createElement('div'); re.className='reply';
+    re.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start"><div class="avatar" style="width:48px;height:48px"><img src="${avatarFor(r.author,r.avatar)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=0.2"></div><div><div class="small"><strong>${escapeHtml(r.author||'Аноним')}</strong> • ${new Date(r.ts).toLocaleString()}</div><div style="margin-top:6px">${escapeHtml(r.text)}</div></div></div>`;
+    rc.appendChild(re);
+  });
+  // clear reply fields
+  document.getElementById('replyAuthor').value = '';
+  document.getElementById('replyText').value = '';
+  document.getElementById('replyAvatarFile').value = '';
+}
+
+/* ========== Actions: add category / create thread / reply / reset / export ========== */
+document.getElementById('addCategoryBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('newCategoryName').value.trim();
+  if(!name) return alert('Введите имя категории');
+  const cat = {id: uid('cat'), name, icon: 'default', channels: []};
+  state.data.categories.push(cat);
+  saveData(state.data);
+  document.getElementById('newCategoryName').value = '';
+  state.activeCategoryId = cat.id; state.activeChannelId = null; state.activeThreadId = null;
+  renderAll();
+});
+
+document.getElementById('newThreadToggle').addEventListener('click', ()=>{
+  if(!state.activeChannelId){ alert('Выберите канал'); return; }
+  const panel = document.getElementById('newThreadPanel');
+  panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
+});
+
+document.getElementById('cancelThread').addEventListener('click', ()=>{ document.getElementById('newThreadPanel').style.display='none'; });
+
+document.getElementById('createThreadBtn').addEventListener('click', ()=>{
+  if(!state.activeCategoryId || !state.activeChannelId) return alert('Выберите канал');
+  const title = document.getElementById('threadTitle').value.trim();
+  const content = document.getElementById('threadContent').value.trim();
+  const author = document.getElementById('threadAuthor').value.trim() || 'Аноним';
+  const tag = document.getElementById('presetTag').value || '';
+  if(!title || !content) return alert('Заголовок и сообщение обязательны');
+  const ch = findChannel(state.activeCategoryId, state.activeChannelId);
+  const thread = { id: uid('t'), title, content, author, avatar: avatarFor(author,null), tag, ts: Date.now(), replies: [] };
+  ch.threads.push(thread);
+  saveData(state.data);
+  document.getElementById('threadTitle').value=''; document.getElementById('threadContent').value=''; document.getElementById('threadAuthor').value='';
+  document.getElementById('newThreadPanel').style.display='none';
+  state.activeThreadId = thread.id;
+  renderAll();
+});
+
+document.getElementById('postReplyBtn').addEventListener('click', ()=>{
+  if(!state.activeThreadId) return;
+  const author = document.getElementById('replyAuthor').value.trim() || 'Аноним';
+  const avatarFile = document.getElementById('replyAvatarFile').value.trim() || null;
+  const text = document.getElementById('replyText').value.trim();
+  if(!text) return alert('Введите текст ответа');
+  const t = findThread(state.activeCategoryId, state.activeChannelId, state.activeThreadId);
+  t.replies.push({ id: uid('r'), author, avatar: avatarFile, text, ts: Date.now() });
+  saveData(state.data);
+  renderThreadView();
+});
+
+document.getElementById('cancelReply').addEventListener('click', ()=>{ document.getElementById('replyAuthor').value=''; document.getElementById('replyText').value=''; document.getElementById('replyAvatarFile').value=''; });
+
+document.getElementById('refreshBtn').addEventListener('click', ()=>{
+  if(!confirm('Сбросить данные к исходному примеру? Это перезапишет localStorage.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state.data = loadData();
+  state.activeCategoryId = null; state.activeChannelId = null; state.activeThreadId = null;
+  renderAll();
+});
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const dataStr = JSON.stringify(state.data, null, 2);
+  const blob = new Blob([dataStr], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'reader_export.json'; a.click(); URL.revokeObjectURL(url);
+});
+
+/* ========== Right panel: stats and active channels ========== */
+function renderRight(){
+  const active = [];
+  state.data.categories.forEach(cat=>{
+    cat.channels.forEach(ch=>{
+      if(ch.threads.length>0) active.push({cat:cat.name,ch:ch.name,count:ch.threads.length});
+    });
+  });
+  activeChannelsDiv.innerHTML = active.slice(0,8).map(a=>`${escapeHtml(a.ch)} <span class="small muted">(${escapeHtml(a.cat)}) • ${a.count}</span>`).join('<br>') || '<div class="small muted">Нет активных каналов</div>';
+  // stats
+  let threads=0, replies=0;
+  state.data.categories.forEach(cat=>cat.channels.forEach(ch=>{ threads += ch.threads.length; ch.threads.forEach(t=> replies+=t.replies.length); }));
+  statsDiv.innerHTML = `Категорий: ${state.data.categories.length}<br>Тем: ${threads}<br>Ответов: ${replies}`;
+}
+
+/* ========== Основной рендер ========== */
+function renderAll(){
+  renderCategories();
+  renderThreads();
+  renderRight();
+  // validate active thread
+  if(state.activeThreadId){
+    const t = findThread(state.activeCategoryId, state.activeChannelId, state.activeThreadId);
+    if(!t) state.activeThreadId = null;
+  }
+  renderThreadView();
+}
+
+/* ========== Инициализация ========== */
+renderAll();
+
+/* ========== Небольшая доп. функциональность: переключение темы (визуал) ========== */
+document.getElementById('toggleTheme').addEventListener('click', ()=>{
+  // простая визуальная смена — изменяет css variables
+  const root = document.documentElement;
+  if(root.style.getPropertyValue('--bg') === '#0b1220'){ // current dark, switch to soft
+    root.style.setProperty('--bg','#f6f7fb'); root.style.setProperty('--panel','#ffffff'); root.style.setProperty('--card','#f7fafc'); root.style.setProperty('--muted','#506070'); root.style.setProperty('--accent','#2366d1');
+    document.body.style.background = 'linear-gradient(180deg,#f6f8fb,#eaf3ff)';
+    document.querySelectorAll('.panel').forEach(p=>p.style.boxShadow='0 6px 18px rgba(15,23,42,0.04)');
+  } else {
+    // reset to defaults
+    root.style.setProperty('--bg','#0b1220'); root.style.setProperty('--panel','#071226'); root.style.setProperty('--card','#0f1724'); root.style.setProperty('--muted','#97a6b3'); root.style.setProperty('--accent','#60a5fa');
+    document.body.style.background = 'linear-gradient(180deg,#051021 0%, #071827 100%)';
+    document.querySelectorAll('.panel').forEach(p=>p.style.boxShadow='0 10px 30px rgba(2,6,23,0.6)');
+  }
+});
+
+/* ========== Поддержка: drag-and-drop изображений для превью (опционально) ========== */
+/* Пользователь ожидает, что картинки 1.png..5.png будут рядом с файлом; код выше использует эти имена напрямую. */
+
+</script>
+</body>
+</html>
